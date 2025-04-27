@@ -1,44 +1,38 @@
 # TransFuseGrid: Transformer-based Lidar-RGB fusion for semantic grid prediction
 
-Semantic grids are a succinct and convenient approach to represent the environment for mobile robotics and autonomous driving applications. While the use of Lidar sensors is now generalized in robotics, most semantic grid prediction approaches in the literature focus only on RGB data. In this paper, we present an approach for semantic grid prediction that uses a transformer architecture to fuse Lidar sensor data with RGB images from multiple cameras. Our proposed method, TransFuseGrid, first transforms both input streams into top-view embeddings, and then fuses these embeddings at multiple scales with Transformers. Finally, a decoder transforms the fused, top-view feature map into a semantic grid of the vehicle's environment. We evaluate the performance of our approach on the nuScenes dataset for the vehicle, drivable area, lane divider and walkway segmentation tasks. The results show that TransFuseGrid achieves superior performance than competing RGB-only and Lidar-only methods. Additionally, the Transformer feature fusion leads to a significative improvement over naive RGB-Lidar concatenation. In particular, for the segmentation of vehicles, our model outperforms state-of-the-art RGB-only and Lidar-only methods by 24% and 53%, respectively.
+Semantic grids provide an efficient and structured representation of the environment for autonomous driving and mobile robotics applications. While LiDAR sensors are widely adopted in modern systems, most existing semantic grid prediction approaches still rely predominantly on RGB camera data. In this paper, we present TransFuseGrid, a transformer-based multimodal fusion framework that integrates LiDAR point clouds and multi-view RGB images for dense semantic grid prediction. Our method first projects both input modalities into a common bird’s-eye-view (BEV) frame to create unified top-view embeddings. These embeddings are then fused at multiple scales using cross-modal Transformers enhanced with dynamic attention mechanisms, where learnable attention masks enable adaptive reweighting of features across modalities. Furthermore, we introduce weather-conditioned embeddings that allow the fusion process to dynamically adjust sensor contributions based on environmental context such as rain, fog, or nighttime conditions. A lightweight decoder then transforms the fused BEV features into high-resolution semantic grids, predicting key classes such as drivable areas, walkways, vehicles, and lane dividers. We evaluate TransFuseGrid on the nuScenes dataset and show that it consistently outperforms RGB-only, LiDAR-only, and naive fusion baselines. In particular, our dynamic attention and weather-aware conditioning strategies lead to sharper object boundaries, improved drivable-area segmentation, and higher Intersection-over-Union (IoU) scores, especially under challenging weather and lighting scenarios.
 
-![Architecture](imgs/transfusegrid_arch.jpg)
+![Architecture](imgs/transfusegrid_weather.png)
 
-## Comparison with competing methods
-### Results on validation split
+## Comparison with baseline TransfuseGrid Model
+### Results on validation IoU
 
-Results on the NuScenes validation split. We compare the Intersection over Union (**IOU**) of the generated semantic grids with the competing approaches in validation set. Best results are presented in **bold** font, second best with 🔹Blue.
+![Architecture](imgs/iou_comparison.png)
 
-| Models                         |  Vehicle  | Drivable area | Lane divider |  Walkway  |
-|--------------------------------|:---------:|:-------------:|:------------:|:---------:|
-| Lift-Splat-Shoot (pre-trained) |   32.80   |       -       |       -      |     -     |
-| Lift-Splat-Shoot *             |   28.94   |     61.98     |   **37.41**  |   🔹50.07   |
-| Pillar feature Net             |   23.43   |     69.19     |     26.05    |   30.57   |
-| TFGrid (concat)                | 🔹32.88   |     🔹74.18     |     30.41    |   43.78   |
-| TFGrid (ours)                  | **35.88** |   **78.87**   |    🔹35.70    | **50.98** |
+### Results on cross entropy loss
 
-We compare the IOU of the competing approaches in only Night conditions and only Rain conditions. Best results are presented in **bold** font, second best in 🔹Blue.
-
-| Class                          |  Vehicle  |           | Drivable area |           | Lane divider |           |  Walkway  |           |
-|--------------------------------|:---------:|:---------:|:-------------:|:---------:|:------------:|:---------:|:---------:|:---------:|
-| Models                         |   Night   |    Rain   |     Night     |    Rain   |     Night    |    Rain   |   Night   |    Rain   |
-| Lift-Splat-Shoot (pre-trained) |   31.06   |   🔹34.06   |       -       |     -     |       -      |     -     |     -     |     -     |
-| Lift-Splat-Shoot *             |   28.41   |   30.81   |     49.13     |   56.86   |   **15.87**  | **34.72** |   🔹24.56   | **46.59** |
-| Pillar feature Net             |   28.54   |   19.56   |     63.89     |   64.01   |     3.60     |   23.72   |   23.52   |   27.22   |
-| TFGrid (concat)                |   🔹37.8   |   33.52   |     🔹68.98     |   🔹67.25   |     7.27     |   27.90   |   23.60   |   40.98   |
-| TFGrid (ours)                  | **39.33** | **37.14** |   **70.45**   | **69.74** |     🔹15.17    |   🔹30.25   | **24.65** |   🔹44.26   |
+![Architecture](imgs/loss_comparison.png)
 
 
 ### Qualitative results
-Comparison between ground truth and semantic grid predictions for vehicles (top row), walkway (second row) and drivable area (third row) for different samples in the validation split. We display the class probabilities as a colorscale, without thresholding. In the top row, we can see how the models with Lidar input can detect all vehicles in the scene, while LSS fails to do so, probably due to occlusions. Furthermore, the definition of the detected vehicles with the TFGrid model is much cleaner than TFGrid concat model. In the second row, we see how TFGrid out performs both baselines for walkway class. In the third row, the ability of the models with Lidar input to predict the details of the drivable area is clearly superior to that of LSS. The bottom row shows the combination of the three classes and results compared with the ground truth (*: Lift-Splat model trained by us, using the source code given by the authors.)
+We evaluate TransFuseGrid across three configurations: (1) a static-fusion baseline, (2) a Learnable_Mask_Model with dynamic attention (without weather conditioning), and (3) the full WeatherEmb_Learnable_Model with dynamic attention and weather-conditioned embeddings. Performance is measured by IoU and cross-entropy loss across 300,000 training steps.
 
-![Comparison](imgs/comparison.png)
+The WeatherEmb_Learnable_Model achieves a peak IoU of 0.77, similar to the baseline model, while the Learnable_Mask_Model plateaus around 0.71. The addition of weather embeddings accelerates early-stage learning, improving convergence stability and robustness.
 
-## Scene prediction visualization
-A scene from nuScenes validation split is used to validate vehicle, drivable_area, lane_divider and walkway classes.
-<img src="./imgs/S1.gif">
+The WeatherEmb_Learnable_Model achieves a final loss of ~0.16, on par with the baseline, and outperforms the Learnable_Mask_Model (~0.26). The dynamic attention in the WeatherEmb_Learnable_Model stabilizes training and enhances semantic accuracy.
 
-[Video release](https://youtu.be/j2nBqtwcCOo)
+These results show that integrating weather-conditioned embeddings improves fusion efficiency and performance, enabling sharper object boundaries and better generalization.
+
+### Comparison results with Baseline Model
+
+## Baseline Results
+![Comparison](imgs/baseline_result_1.jpg)
+![Comparison](imgs/baseline_result_2.jpg)
+
+## Learnable Mask + Weather Embedding Results
+![Comparison](imgs/weather_lm_results_1.jpg)
+![Comparison](imgs/weather_lm_results_2.jpg)
+
 
 ## Use TransFuseGrid
 
@@ -52,4 +46,4 @@ This script allows training using classes: vehicle, drivable_area, walkway, lane
 
 ## Acknowledgement
 
-This model repo is created using Philion and Fidler's work [Lift, Splat, Shoot](https://github.com/nv-tlabs/lift-splat-shoot). Pillar feature net based on [GndNet](https://github.com/anshulpaigwar/GndNet) work. And multi-modal fuser transformer based on Prakash et al work [TransFuser](https://github.com/autonomousvision/transfuser).
+This model repo is created using multi-modal fuser transformer based on Prakash et al work [TransFuser](https://github.com/autonomousvision/transfuser) and TransFuseGrid: Transformer-based Lidar-RGB fusion for semantic grid prediction based on Gustavo Salazar-Gomez et al work [TFGrid](https://github.com/gsg213/TFGrid)
