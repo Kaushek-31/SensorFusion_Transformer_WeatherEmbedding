@@ -17,7 +17,7 @@ Semantic grids provide an efficient and structured representation of the environ
 ### Qualitative results
 We evaluate TransFuseGrid across three configurations: (1) a static-fusion baseline, (2) a Learnable_Mask_Model with dynamic attention (without weather conditioning), and (3) the full WeatherEmb_Learnable_Model with dynamic attention and weather-conditioned embeddings. Performance is measured by IoU and cross-entropy loss across 300,000 training steps.
 
-The WeatherEmb_Learnable_Model achieves a peak IoU of 0.77, similar to the baseline model, while the Learnable_Mask_Model plateaus around 0.71. The addition of weather embeddings accelerates early-stage learning, improving convergence stability and robustness.
+The WeatherEmb_Learnable_Model achieves a peak IoU of 0.76, similar to the baseline model, while the Learnable_Mask_Model plateaus around 0.71. The addition of weather embeddings accelerates early-stage learning, improving convergence stability and robustness.
 
 The WeatherEmb_Learnable_Model achieves a final loss of ~0.16, on par with the baseline, and outperforms the Learnable_Mask_Model (~0.26). The dynamic attention in the WeatherEmb_Learnable_Model stabilizes training and enhances semantic accuracy.
 
